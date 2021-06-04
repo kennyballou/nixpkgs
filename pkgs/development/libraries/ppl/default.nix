@@ -1,4 +1,13 @@
-{ fetchurl, fetchpatch, lib, stdenv, gmpxx, perl, gnum4 }:
+{ fetchurl
+, fetchpatch
+, lib
+, stdenv
+, gmpxx
+, perl
+, gnum4
+, jdk ? null
+, javaBindings ? false
+}:
 
 let version = "1.2"; in
 
@@ -17,13 +26,21 @@ stdenv.mkDerivation {
     sha256 = "1zj90hm25pkgvk4jlkfzh18ak9b98217gbidl3731fdccbw6hr87";
   })];
 
-  nativeBuildInputs = [ perl gnum4 ];
+  nativeBuildInputs = [ perl gnum4 ]
+    ++ lib.optional javaBindings jdk;
   propagatedBuildInputs = [ gmpxx ];
 
   configureFlags = [
+    "--enable-instantiations=all"
+    "CPPFLAGS=-fexeceptions"
+    "LDFLAGS=-znoexecstack"
   ] ++ lib.optional stdenv.isDarwin [
-    "CPPFLAGS=-fexceptions"
-    "--disable-ppl_lcdd" "--disable-ppl_lpsol" "--disable-ppl_pips"
+    "--disable-ppl_lcdd"
+    "--disable-ppl_lpsol"
+    "--disable-ppl_pips"
+  ] ++ lib.optional javaBindings [
+    "--enable-interfaces=java"
+    "--with-java=${jdk}"
   ];
 
   # Beware!  It took ~6 hours to compile PPL and run its tests on a 1.2 GHz
